@@ -2,6 +2,8 @@
 import rospy
 import euler2quat as e2q
 from std_msgs.msg import Bool
+from std_msgs.msg import Float64
+
 from mavros_msgs.msg import StatusText
 from sensor_msgs.msg import Imu
 from mavros_msgs.msg import VFR_HUD
@@ -9,6 +11,7 @@ from mavros_msgs.msg import VFR_HUD
 def status_callback(message):
     #get_caller_id(): Get fully resolved name of local node
     pub = rospy.Publisher('leak', Bool, queue_size=10)
+
     if "Leak" in message.text:
         rospy.loginfo(rospy.get_caller_id() + "there is a leak with severity =  ", message.severity)
         status = True
@@ -22,9 +25,12 @@ def imu_callback(message):
     print(f"roll: {roll}, pitch: {pitch}, yaw:{yaw}")
 
 def depth_callback(message):
+    pub_depth = rospy.Publisher('depth_topic', Float64, queue_size=10)
+
     altitude = message.altitude
     print(f"Depth is: {altitude}")
-
+    
+    pub_depth.publish(altitude)
 
 def sensors():
     rospy.init_node('sensors', anonymous=True)
