@@ -43,9 +43,9 @@ def sensors():
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 def pub_commands():
-    commands_topic = rospy.Publisher('chatter', OverrideRCIn, queue_size=10)
+    rospy.init_node('publisher', anonymous=True)
+    commands_topic = rospy.Publisher('/mavros/rc/override', OverrideRCIn, queue_size=10)
 
-    rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(1) # 1hz
     i = 0
     while not rospy.is_shutdown():
@@ -63,5 +63,5 @@ def pub_commands():
         i=i+1
 if __name__ == '__main__':
 
-    sensors()
+    # sensors()
     pub_commands()
