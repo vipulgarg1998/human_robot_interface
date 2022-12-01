@@ -3,10 +3,11 @@ import rospy
 import euler2quat as e2q
 from std_msgs.msg import Bool
 from std_msgs.msg import Float64
-
+import keyboard
 from mavros_msgs.msg import StatusText
 from sensor_msgs.msg import Imu
 from mavros_msgs.msg import VFR_HUD
+from mavros_msgs.msg import OverrideRCIn
 
 def status_callback(message):
     #get_caller_id(): Get fully resolved name of local node
@@ -41,6 +42,26 @@ def sensors():
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
+def pub_commands():
+    commands_topic = rospy.Publisher('chatter', OverrideRCIn, queue_size=10)
 
+    rospy.init_node('talker', anonymous=True)
+    rate = rospy.Rate(1) # 1hz
+    i = 0
+    while not rospy.is_shutdown():
+        commands= OverrideRCIn()
+        commands.channels=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        if keyboard.is_pressed('w'): 
+            commands.channels[2] = 1600
+        elif keyboard.is_pressed('z'): 
+            commands.channels[2] = 1400
+        
+
+        commands_topic.publish(commands)
+        
+        rate.sleep()
+        i=i+1
 if __name__ == '__main__':
+
     sensors()
+    pub_commands()
