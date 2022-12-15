@@ -27,23 +27,36 @@ class VisualServo:
         self.width = None
         self.height = None
 
-    def image_callback(self, image_msg, view = True):
+    def image_callback(self, image_msg, view = False):
         self.cv_image = self.cv_bridge.imgmsg_to_cv2(image_msg)
         self.width = self.cv_image.shape[1]
         self.height = self.cv_image.shape[0]
-        self.detectMarkers(self.cv_image)
+        ids, corners = self.detectMarkers(self.cv_image)
+        centroids = self.find_centroid(corners)
+        self.publish_markers_state(ids, centroids)
         # Convert from BGR to RGB color format.
-        # cv2.imshow('image', self.cv_image)
-        # #   out.write(nimg)
-        # # Press `q` to exit.
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     self.exit()
+        if(view):
+            cv2.imshow('image', self.cv_image)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                self.exit()
+
+    def publish_markers_state(self, ids, corners):
+        if(ids is None):
+            return
+        for i, id in enumerate(ids):
+            if(id == 70):
+                self.control(corners[i][0], corners[i][1])
+
+    def control(self, x, y):
+        print(f'X is {x} and Y is {y}')
 
     def find_centroid(self, corners):
+        centroids = []
         for corner in corners:
             x = np.mean(corner[0, :, 0])
             y = np.mean(corner[0, :, 1])
-            print(f'X is {x} and Y is {y}')
+            centroids.append([x, y])
+        return centroids
     
     def detectMarkers(self, image, view=True):
         gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
@@ -52,14 +65,16 @@ class VisualServo:
         # print("parameters", parameters)
         corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters = parameters)
         corners = np.array(corners)
-        print("corners",corners.shape)
-        self.find_centroid(corners)
-        # print("ids", ids)
-        # print("rejectedImgPoints",rejectedImgPoints)
+        
         if(view):
             frame_markers = aruco.drawDetectedMarkers(image.copy(), corners, ids)
             cv2.imshow('aruco_image', frame_markers)
             cv2.waitKey(1)
+
+        return ids, corners
+
+    def exit(self):
+        cv2.destroyAllWindows()
         
 def main(args=None):
     # initializing the subscriber node
