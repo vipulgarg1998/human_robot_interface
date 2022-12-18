@@ -26,7 +26,7 @@ class VisualServo:
         self.cy = None
         self.width = None
         self.height = None
-
+        self.i=0
     def image_callback(self, image_msg, view = False):
         self.cv_image = self.cv_bridge.imgmsg_to_cv2(image_msg)
         self.width = self.cv_image.shape[1]
@@ -35,6 +35,11 @@ class VisualServo:
         centroids = self.find_centroid(corners)
         self.publish_markers_state(ids, centroids)
         # Convert from BGR to RGB color format.
+        name = '/home/hassan/cirtesu/src/human_robot_interface/scripts/images/image'+str(self.i)+'.jpg'
+        print(name)
+        self.i = self.i+1
+        image_gray = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
+        cv2.imwrite(name, image_gray)
         if(view):
             cv2.imshow('image', self.cv_image)
             if cv2.waitKey(1) & 0xFF == ord('q'):
