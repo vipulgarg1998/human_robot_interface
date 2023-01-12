@@ -13,6 +13,13 @@ class VisualServo:
     def __init__(self):
         
         self.image_sub = rospy.Subscriber("/camera0/image_raw", Image, self.image_callback)
+
+        self.surge_state_pub = rospy.Publisher('/surge/state', Float64, queue_size=10)
+        self.surge_setpoint_pub = rospy.Publisher('/surge/setpoint', Float64, queue_size=10)
+        self.heave_state_pub = rospy.Publisher('/heave/state', Float64, queue_size=10)
+        self.heave_setpoint_pub = rospy.Publisher('/heave/setpoint', Float64, queue_size=10)
+        self.sway_state_pub = rospy.Publisher('/sway/state', Float64, queue_size=10)
+        self.sway_setpoint_pub = rospy.Publisher('/sway/setpoint', Float64, queue_size=10)
  
         # For OpenCV
         self.cv_bridge = CvBridge()
@@ -44,11 +51,19 @@ class VisualServo:
         if(ids is None):
             return
         for i, id in enumerate(ids):
-            if(id == 70):
-                self.control(corners[i][0], corners[i][1])
+            self.control(corners[i][0], corners[i][1], id)
 
-    def control(self, x, y):
-        print(f'X is {x} and Y is {y}')
+    def control(self, x, y, id):
+
+        self.sway_setpoint_pub.publish(Float64(self.width/2))
+        self.sway_state_pub.publish(Float64(y))
+
+        if(id == 200):
+            self.heave_setpoint_pub.publish(Float64(self.height/2))
+            self.heave_state_pub.publish(Float64(x))
+            
+        print(f'Sending Control')
+        
 
     def find_centroid(self, corners):
         centroids = []
