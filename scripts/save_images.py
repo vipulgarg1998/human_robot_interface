@@ -13,13 +13,6 @@ class VisualServo:
     def __init__(self):
         
         self.image_sub = rospy.Subscriber("/camera0/image_raw", Image, self.image_callback)
-
-        self.surge_state_pub = rospy.Publisher('/surge/state', Float64, queue_size=10)
-        self.surge_setpoint_pub = rospy.Publisher('/surge/setpoint', Float64, queue_size=10)
-        self.heave_state_pub = rospy.Publisher('/heave/state', Float64, queue_size=10)
-        self.heave_setpoint_pub = rospy.Publisher('/heave/setpoint', Float64, queue_size=10)
-        self.sway_state_pub = rospy.Publisher('/sway/state', Float64, queue_size=10)
-        self.sway_setpoint_pub = rospy.Publisher('/sway/setpoint', Float64, queue_size=10)
  
         # For OpenCV
         self.cv_bridge = CvBridge()
@@ -33,7 +26,7 @@ class VisualServo:
         self.cy = None
         self.width = None
         self.height = None
-
+        self.i=0
     def image_callback(self, image_msg, view = False):
         self.cv_image = self.cv_bridge.imgmsg_to_cv2(image_msg)
         self.width = self.cv_image.shape[1]
@@ -42,6 +35,11 @@ class VisualServo:
         centroids = self.find_centroid(corners)
         self.publish_markers_state(ids, centroids)
         # Convert from BGR to RGB color format.
+        name = '/home/hassan/cirtesu/src/human_robot_interface/scripts/images/image'+str(self.i)+'.jpg'
+        print(name)
+        self.i = self.i+1
+        image_gray = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
+        cv2.imwrite(name, image_gray)
         if(view):
             cv2.imshow('image', self.cv_image)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -51,20 +49,14 @@ class VisualServo:
         if(ids is None):
             return
         for i, id in enumerate(ids):
-            self.control(corners[i][0], corners[i][1], id)
+            if(id == 70):
+                self.control(corners[i][0], corners[i][1])
 
-    def control(self, x, y, id):
-
-        self.sway_setpoint_pub.publish(Float64(self.width/2))
-        self.sway_state_pub.publish(Float64(y))
-
-        if(id == 200):
-            self.heave_setpoint_pub.publish(Float64(self.height/2))
-            self.heave_state_pub.publish(Float64(x))
-            
-        print(f'Sending Control')
-        
-
+    def control(self, x, y):
+        controllers.update_centroid(x,y)
+        Ex = controllers.obtain_commands_yaw()
+        Ey = controllers.obtain_commands_heave()
+        print(Ex, Ey)
     def find_centroid(self, corners):
         centroids = []
         for corner in corners:
