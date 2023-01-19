@@ -164,6 +164,7 @@ catkin_install_python(PROGRAMS
   scripts/sensors.py
   scripts/visual_servo.py
   scripts/teleop_bluerov.py
+  scripts/visual_servo2.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
