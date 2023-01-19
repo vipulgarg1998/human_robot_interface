@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-import euler2quat as e2q
+import numpy as np
 from std_msgs.msg import Bool
 from std_msgs.msg import Float64
 import keyboard
@@ -9,59 +9,70 @@ from sensor_msgs.msg import Imu
 from mavros_msgs.msg import VFR_HUD
 from mavros_msgs.msg import OverrideRCIn
 
-def status_callback(message):
-    #get_caller_id(): Get fully resolved name of local node
-    pub = rospy.Publisher('leak', Bool, queue_size=10)
 
-    if "Leak" in message.text:
-        rospy.loginfo(rospy.get_caller_id() + "there is a leak with severity =  ", message.severity)
-        status = True
-    else:
-        rospy.loginfo(rospy.get_caller_id() + "No leak. Go Fish Captain!")
-        status = False
-    pub.publish(status)
-def imu_callback(message):
-    q = message.orientation
-    [roll, pitch, yaw ] = e2q.euler_from_quaternion(q)
-    print(f"roll: {roll}, pitch: {pitch}, yaw:{yaw}")
+class Sensors:
+    def __init__(self, debug = False):
+        self.debug = debug
 
-def depth_callback(message):
-    pub_depth = rospy.Publisher('depth_topic', Float64, queue_size=10)
+        rospy.Subscriber("/mavros/statustext/recv", StatusText, self.status_callback)
+        rospy.Subscriber("/mavros/imu/data", Imu, self.imu_callback)
+        rospy.Subscriber("/mavros/vfr_hud", VFR_HUD, self.depth_callback)
 
-    altitude = message.altitude
-    print(f"Depth is: {altitude}")
-    
-    pub_depth.publish(altitude)
+        self.leak_pub = rospy.Publisher('leak', Bool, queue_size=10)
+        self.depth_pub = rospy.Publisher('depth_topic', Float64, queue_size=10)
 
-def sensors():
+    def status_callback(self, message):
+        if "Leak" in message.text:
+            rospy.loginfo(rospy.get_caller_id() + " there is a leak with severity =  ", message.severity)
+            status = True
+        else:
+            rospy.loginfo(rospy.get_caller_id() + " No leak. Go Fish Captain!")
+            status = False
+        self.leak_pub.publish(status)
+
+    def imu_callback(self, message):
+        q = message.orientation
+        [roll, pitch, yaw ] = self.euler_from_quaternion(q)
+        if(self.debug):
+            print(f"roll: {roll}, pitch: {pitch}, yaw:{yaw}")
+
+    def depth_callback(self, message):
+        altitude = message.altitude
+        self.depth_pub.publish(altitude)
+        if(self.debug):
+            print(f"Depth is: {altitude}")
+
+    def spin(self):
+        rospy.spin()
+
+    def euler_from_quaternion(self, quaternion):
+        """
+        Converts quaternion (w in last place) to euler roll, pitch, yaw
+        quaternion = [x, y, z, w]
+        Bellow should be replaced when porting for ROS 2 Python tf_conversions is done.
+        """
+        x = quaternion.x
+        y = quaternion.y
+        z = quaternion.z
+        w = quaternion.w
+
+        sinr_cosp = 2 * (w * x + y * z)
+        cosr_cosp = 1 - 2 * (x * x + y * y)
+        roll = np.arctan2(sinr_cosp, cosr_cosp)
+
+        sinp = 2 * (w * y - z * x)
+        pitch = np.arcsin(sinp)
+
+        siny_cosp = 2 * (w * z + x * y)
+        cosy_cosp = 1 - 2 * (y * y + z * z)
+        yaw = np.arctan2(siny_cosp, cosy_cosp)
+
+        return roll, pitch, yaw
+
+def main():
     rospy.init_node('sensors', anonymous=True)
+    sensors = Sensors()
+    sensors.spin()
 
-    rospy.Subscriber("/mavros/statustext/recv", StatusText, status_callback)
-    rospy.Subscriber("/mavros/imu/data", Imu, imu_callback)
-    rospy.Subscriber("/mavros/vfr_hud", VFR_HUD, depth_callback)
-
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
-def pub_commands():
-    rospy.init_node('publisher', anonymous=True)
-    commands_topic = rospy.Publisher('/mavros/rc/override', OverrideRCIn, queue_size=10)
-
-    rate = rospy.Rate(1) # 1hz
-    i = 0
-    while not rospy.is_shutdown():
-        commands= OverrideRCIn()
-        commands.channels=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        if keyboard.is_pressed('w'): 
-            commands.channels[2] = 1600
-        elif keyboard.is_pressed('z'): 
-            commands.channels[2] = 1400
-        
-
-        commands_topic.publish(commands)
-        
-        rate.sleep()
-        i=i+1
 if __name__ == '__main__':
-
-    # sensors()
-    pub_commands()
+    main()
