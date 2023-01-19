@@ -38,4 +38,7 @@ To run the ROV in auto mode, run the following
 roslaunch human_robot_interface visual_servo.launch
 ```
 
+## Camera Calibration:
+To run obtain the camera calibration matrix, you can simply run the python script 'cam_calibrate.py'. But first you need to put all images in a specific folder and specifiy the path to this folder inside the script. It will take some time to finish the calibration process and the result will be the camera calibration matrix
+
 
