@@ -7,7 +7,6 @@ from sensor_msgs.msg import Image
 import cv2
 from cv2 import aruco
 from cv_bridge import CvBridge # Package to convert between ROS and OpenCV Images
-from PID_controller import controllers
 
 class VisualServo:
     def __init__(self):
@@ -17,7 +16,7 @@ class VisualServo:
         self.heave_setpoint_pub = rospy.Publisher('/heave/setpoint', Float64, queue_size=10)
         self.sway_state_pub = rospy.Publisher('/sway/state', Float64, queue_size=10)
         self.sway_setpoint_pub = rospy.Publisher('/sway/setpoint', Float64, queue_size=10)
-        # For OpenCV
+        # For OpenCV    s
         self.cv_bridge = CvBridge()
         self.cv_image = None
 
@@ -102,14 +101,15 @@ class VisualServo:
             self.currentX = self.currentX + np.mean((self.corners200)[:,0])
             self.referenceY = self.referenceY + np.mean((self.corners200d)[:,1])
             self.currentY = self.currentY + np.mean((self.corners200)[:,1])
-        if self.detected70 == False and self.detected200 == False:
+        if self.detected70 or self.detected200:
             self.heave_state_pub.publish(Float64(self.currentY))
             self.heave_setpoint_pub.publish(Float64(self.referenceY))
             self.sway_state_pub.publish(Float64(self.currentX))
             self.sway_setpoint_pub.publish(Float64(self.currentX))
-        print(f"self.Epx: {self.Epx}")
-        print(f"self.Epy: {self.Epy}")
-
+        print(f"self.referenceX: {self.referenceX}")
+        print(f"self.referenceY: {self.referenceY}")
+        print(f"self.currentX: {self.currentX}")
+        print(f"self.currentY: {self.currentY}")
     def obtain_features(self,corners,ids):
         self.corners70 = self.corners70d
         self.corners200 = self.corners200d

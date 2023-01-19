@@ -15,7 +15,7 @@ class TeleopBluerov:
         self.heave_effort_sub = rospy.Subscriber("/heave/effort", Float64, self.heave_callback)
 
         self.key_pressed = None
-        self.auto = False
+        self.auto = True
         self.default_channels = [1500 , 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1100, 1100, 0,0,0,0,0,0,0,0]
 
         self.clear = lambda : os.system('tput reset')
@@ -49,7 +49,7 @@ class TeleopBluerov:
         if(key_pressed == keyboard.Key.esc):
             rospy.signal_shutdown("Esc key is pressed")
             quit()
-        elif(key_pressed == keyboard.Key.tab):
+        elif(key_pressed == keyboard.Key.f1):
             self.auto = not self.auto
             print(f"Autonous mode is {self.auto}")
 
@@ -85,7 +85,7 @@ class TeleopBluerov:
         if(self.debug):
             print(f"Doing Sway with value {msg.data}")
         channels = self.default_channels
-        channels[5] = -int(msg.data) + 1500
+        channels[5] = int(msg.data) + 1500
         self.publish_velocity(channels)
 
     def surge_callback(self, msg):
