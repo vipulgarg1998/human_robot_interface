@@ -27,7 +27,7 @@
       <remap from="control_effort" to="/heave/effort" />
     </node>
 
-    <!-- <node name="pid_surge" pkg="pid" type="controller" >
+    <node name="pid_surge" pkg="pid" type="controller" >
       <param name="Kp" value="5.0" />
       <param name="Ki" value="0.0" />
       <param name="Kd" value="0.1" />
@@ -39,8 +39,8 @@
       <remap from="setpoint" to="/surge/setpoint" />
       <remap from="topic_from_plant" to="/surge/state" />
       <remap from="topic_from_controller" to="/surge/effort" />
-    </node> -->
+    </node>
 
-    <!-- <node pkg="human_robot_interface" name="visual_servo" type="visual_servo.py" output="screen"/> -->
+    <node pkg="human_robot_interface" name="visual_servo" type="visual_servo.py" output="screen"/>
     <node pkg="human_robot_interface" name="teleop_bluerov" type="teleop_bluerov.py" output="screen"/>
 </launch>
